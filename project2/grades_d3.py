@@ -44,5 +44,30 @@ def get_data(db, table):
 
         results_data_list.append(result_data_dict)
 
-    return jsonify(results_data_list)
+    sel1 = [
+        table.school_name,
+        table.spg_score,
+        table.calc_student_teach_ratio
+    ]
+    results1 = db.session.query(*sel1).all()
+
+    # Create a dictionary entry for each row of metadata information
+    results_data_list1 = []
+    
+    for result1 in results1:
+        result_data_dict1 = {}
+        result_data_dict1["school_name"] = result1[0]
+        result_data_dict1["spg_score"] = result1[1]
+        result_data_dict1["calc_student_teach_ratio"] = result1[2]
+
+        #print(result_data_dict)
+
+        results_data_list1.append(result_data_dict1)
+    
+    final = []
+    final.append(results_data_list)
+    final.append(results_data_list1)
+
+    return jsonify(final)
+    # return jsonify(results_data_list)
     

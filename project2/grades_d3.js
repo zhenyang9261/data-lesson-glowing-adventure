@@ -147,7 +147,7 @@ function buildPlot(factData) {
     .attr("cx", d => xLinearScale(d[chosenXAxis]))
     .attr("cy", d => yLinearScale(d.spg_score))
     .attr("r", 6)
-    .attr("fill", "#947BF9")
+    .attr("fill", "#2E64FE")
     .attr("opacity", "1");
     
 //  var textsGroup = chartGroup.selectAll("text")
@@ -280,7 +280,7 @@ function builddata() {
   // Use `d3.json` to fetch the data 
   d3.json("/api/d3").then((data) => {
     console.log(data[0]);
-    buildPlot(data);
+    buildPlot(data[0]);
     });
 }
 
