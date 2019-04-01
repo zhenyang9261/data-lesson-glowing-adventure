@@ -12,22 +12,44 @@ var margin = {
 var width = svgWidth - margin.left - margin.right;
 var height = svgHeight - margin.top - margin.bottom;
 
-// Create an SVG wrapper, append an SVG group that will hold our chart,
+var chartGroup, chosenXAxis;
+
+// Create an SVG wrappers, append an SVG group that will hold our chart,
 // and shift the latter by left and top margins.
-var svg = d3
-  .select("#grades-d3-epp")
-  .append("svg")
-  .attr("width", svgWidth)
-  .attr("height", svgHeight);
+var svg_ppe = d3
+ .select("#grades-d3-ppe")
+ .append("svg")
+ .attr("width", svgWidth)
+ .attr("height", svgHeight);
 
-// Append an SVG group
-var chartGroup = svg.append("g")
-  .attr("transform", `translate(${margin.left}, ${margin.top})`);
+var svg_ratio = d3
+ .select("#grades-d3-ratio")
+ .append("svg")
+ .attr("width", svgWidth)
+ .attr("height", svgHeight);
 
-// Initial Params
-var chosenXAxis = "federal_ppe";
+/*
+ * Function to initialize the chart group and X axis
+ */
+ function init(plotSVG, chosenX) {
+  
+  // Append an SVG group to correct plot area
+  if (plotSVG === "ppe") {
+    chartGroup = svg_ppe.append("g")
+    .attr("transform", `translate(${margin.left}, ${margin.top})`);
+  }
+  else {
+    chartGroup = svg_ratio.append("g")
+    .attr("transform", `translate(${margin.left}, ${margin.top})`);
+  }
 
-// function used for updating x-scale var upon click on axis label
+  // Initial Params
+  chosenXAxis = chosenX; 
+}
+
+/*
+ * Function used for updating x-scale var upon click on axis label
+ */
 function xScale(factData, chosenXAxis) {
   // create scales
   var xLinearScale = d3.scaleLinear()
@@ -40,7 +62,9 @@ function xScale(factData, chosenXAxis) {
 
 }
 
-// function used for updating xAxis var upon click on axis label
+/*
+ * Function used for updating xAxis var upon click on axis label
+ */
 function renderAxes(newXScale, xAxis) {
   
   var bottomAxis = d3.axisBottom(newXScale);
@@ -52,8 +76,9 @@ function renderAxes(newXScale, xAxis) {
   return xAxis;
 }
 
-// function used for updating circles group with a transition to
-// new circles
+/*
+ * Function used for updating circles group with a transition to new circles
+ */
 function renderCircles(circlesGroup, newXScale, chosenXaxis) {
 
   circlesGroup.transition()
@@ -72,7 +97,9 @@ function renderCircles(circlesGroup, newXScale, chosenXaxis) {
 //   return textsGroup;
 // }
 
-// function used for updating circles group with new tooltip
+/*
+ * Function used for updating circles group with new tooltip
+ */
 function updateToolTip(chosenXAxis, circlesGroup) {
   
   var label;
@@ -82,15 +109,21 @@ function updateToolTip(chosenXAxis, circlesGroup) {
   else if (chosenXAxis === "state_ppe") {
     label = "State EPP: ";
   }
-  else {
+  else if (chosenXAxis === "local_ppe") {
     label = "Local EPP: ";
+  }
+  else {
+    label = "Teacher-Student Ratio"
   }
 
   var toolTip = d3.tip()
     .attr("class", "d3-tip")
     .offset([60, -30])
     .html(function(d) {
-      return (`${d.district_name}<br>${label} ${(d[chosenXAxis]).toFixed(2)}`);
+      if (chosenXAxis === 'calc_student_teach_ratio')
+        return (`${d.school_name} ${d.spg_score}<br>${label} ${(d[chosenXAxis]).toFixed(2)}`);
+      else  
+        return (`${d.district_name}<br>${label} ${(d[chosenXAxis]).toFixed(2)}`);
     });
 
   circlesGroup.call(toolTip);
@@ -106,8 +139,14 @@ function updateToolTip(chosenXAxis, circlesGroup) {
   return circlesGroup;
 }
 
-function buildPlot(factData) {
+/**
+ * Function to build the plot of school performance grades vs. per pupil expense
+ */
+function buildPlot_ppe(factData) {
  
+  //init("#grades-d3-ppe", "federal_ppe");
+  init("ppe", "federal_ppe");
+
   // Convert data to numeric
   factData.forEach(function(data) {
     data.federal_ppe = +data.federal_ppe;
@@ -200,7 +239,7 @@ function buildPlot(factData) {
   chartGroup.append("text")
     .attr("transform", "rotate(-90)")
     .attr("y", 0 - margin.left)
-    .attr("x", 0 - (height / 2))
+    .attr("x", 0 - (height / 4 * 3))
     .attr("dy", "1em")
     .classed("axis-text", true)
     .text("School Performance Grades");
@@ -272,15 +311,92 @@ function buildPlot(factData) {
 }
 
 /**
- * Function to get data from API 
- * 
+ * Function to build the plot of school performance grades vs. 
+ * teacher-student ratio
+ */
+function buildPlot_ratio(factData) {
+ 
+  init("ratio", "calc_student_teach_ratio");
+
+  // Convert data to numeric
+  factData.forEach(function(data) {
+    data.federal_ppe = +data.calc_student_teach_ratio;
+    data.spg_score = +data.spg_score;
+  });
+
+  // xLinearScale function above csv import
+  var xLinearScale = xScale(factData, chosenXAxis);
+
+  // Create y scale function
+  var yLinearScale = d3.scaleLinear()
+     .domain([d3.min(factData, d => d.spg_score) * 0.8,
+     d3.max(factData, d => d.spg_score) * 1.2])
+     .range([height, 0]);
+
+  // Create initial axis functions
+  var bottomAxis = d3.axisBottom(xLinearScale);
+  var leftAxis = d3.axisLeft(yLinearScale);
+ 
+  // append x axis
+  var xAxis = chartGroup.append("g")
+    .classed("x-axis", true)
+    .attr("transform", `translate(0, ${height})`)
+    .call(bottomAxis);
+
+  // append y axis
+  chartGroup.append("g")
+    .call(leftAxis);
+
+  // append initial circles
+  var circlesGroup = chartGroup.selectAll("circle")
+    .data(factData)
+    .enter()
+    .append("circle")
+    .attr("cx", d => xLinearScale(d[chosenXAxis]))
+    .attr("cy", d => yLinearScale(d.spg_score))
+    .attr("r", 2)
+    .attr("fill", "#2E64FE")
+    .attr("opacity", "1");
+ 
+  // Create group for  2 x- axis labels
+  var labelsGroup = chartGroup.append("g")
+    .attr("transform", `translate(${width / 2}, ${height + 20})`);
+
+  var ratioLabel = labelsGroup.append("text")
+    .attr("x", 0)
+    .attr("y", 20)
+    .attr("value", "calc_student_teach_ratio") // value to grab for event listener
+    .classed("active", true)
+    .text("Teacher-Student Ratio (%)");
+
+  // append y axis
+  chartGroup.append("text")
+    .attr("transform", "rotate(-90)")
+    .attr("y", 0 - margin.left)
+    .attr("x", 0 - (height / 4 * 3))
+    .attr("dy", "1em")
+    .classed("axis-text", true)
+    .text("School Performance Grades");
+
+  // updateToolTip function above csv import
+  var circlesGroup = updateToolTip(chosenXAxis, circlesGroup);
+
+}
+
+/**
+ * Function to get data from API then call build plot functions
  */
 function builddata() {
 
   // Use `d3.json` to fetch the data 
   d3.json("/api/d3").then((data) => {
-    console.log(data[0]);
-    buildPlot(data[0]);
+    //console.log(data[0]);
+    
+    // Build plot of grades vs. per pupil expense
+    buildPlot_ppe(data[0]);
+
+    // Build plot of grades vs. per pupil expense
+    buildPlot_ratio(data[1]);
     });
 }
 
