@@ -5,33 +5,40 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Pet Pals!</title>
+    <title>NC Schools Performance</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/grades_d3.css') }}">
+    <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+    <script>
+        $( function() {
+            $( "#accordion" ).accordion();
+        });
+    </script>
 </head>
 
 <body>
     <div class="container">
         <div class="jumbotron" style="text-align: center">
-            <h1>Factors Affect School Grades</h1>
+            <h1>School Performance Grades</h1>
             <p></p>
         </div>
-<!--
+
         <div class="row">
             <div class="col-md-12">
-                <h2>Look at all of the current pet pals!</h2>
-                <div id="plot"></div>
-            </div>
-        </div>
-    -->
-        <div class="row">
-            <div class="col-md-12">
-                <div id="grades-d3"></div>
+                <div id="accordion">
+                    <h3>School Performance Grades vs. Expense Per Pupil</h3>
+                    <div id="grades-d3-epp"></div>
+                    <h3>School Performance Grades vs. Teacher-Student Ratio</h3>
+                    <div id="grades-d3-ratio"></div>
+                </div>
             </div>
         </div>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/5.5.0/d3.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3-tip/0.9.1/d3-tip.js"></script>
 
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     <script src="{{ url_for('static', filename='js/grades_d3.js') }}"></script>
